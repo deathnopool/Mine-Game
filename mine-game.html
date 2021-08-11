@@ -1,0 +1,288 @@
+<html>
+  <head>
+    <style>
+      .row {
+        display: flex;
+        flex-direction: row;
+      }
+      .cell {
+        width: 25px;
+        height: 25px;
+        border: 1px solid lightgray;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: small;
+      }
+      .cell.mask {
+        background: #03a9f4;
+      }
+      .cell.flag {
+        color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="App">
+      <div id="Container">
+        <div class="row" v-for="(arr, y) of arrs">
+          <div 
+            v-bind:class="{ cell: true, mask: item.mask, flag: item.flag }" 
+            v-for="(item, x) of arr" 
+            @click.left="handleItemClick(item, y, x, $event)"
+            @click.right="handleItemRightClick(item, y, x, $event)">
+            <span v-if="!item.mask">
+              <span v-if="item.type==VALUE_TYPES.BOOM">×</span>
+              <span v-else-if="item.type==VALUE_TYPES.NUMBER">{{ item.num }}</span>
+              <span e-else></span>
+            </span>
+            <span v-else-if="item.flag">F</span>
+          </div>
+        </div>
+        <div>
+          剩余: {{ markedBoomCount }}/{{ boomCount }}
+        </div>
+        <div>
+          <button @click="handleGodSolve">i am GOD!</button>
+        </div>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script>
+      (function()
+      {
+        const VALUE_TYPES = {
+          EMPTY: 0,
+          BOOM: -1,
+          NUMBER: 1
+        };
+        var app = new Vue({
+          el: '#App',
+          data() {
+            return {
+              VALUE_TYPES,
+              arrs: generateMap(10, 10, 20),
+            };
+          },
+          created: function()
+          {
+
+          },
+          methods: {
+            handleItemClick(item, y, x, e) {
+              console.log("handleItemClick", item, y, x, e);
+              if (this.arrs[y][x].flag)
+              {
+                return;
+              }
+              this.arrs[y][x].mask = false;
+              if (this.arrs[y][x].type ===  VALUE_TYPES.EMPTY)
+              {
+                onEmptyCellClick(this.arrs, y, x);
+              }
+              this.arrs = this.arrs.slice();
+              if (this.arrs[y][x].type === VALUE_TYPES.BOOM)
+              {
+                this.arrs = this.arrs.map(arr => arr.map(item => 
+                {
+                  item.mask = false;
+
+                  return item;
+                }));
+                alert("game over");
+              }
+              else if (this.solvedCount >= (this.cellCount - this.boomCount))
+              {
+                alert("you win");
+              }
+              // console.log(">>>", this.arrs[y][x]);
+            },
+            handleItemRightClick(item, y, x, e) {
+              console.log("handleItemRightClick", item, y, x, e);
+              window.event.returnValue=false;
+              if (!item.mask)
+              {
+                return;
+              }
+              
+              this.arrs[y][x].flag = !item.flag;
+              this.arrs = this.arrs.slice();
+            },
+            handleGodSolve()
+            {
+              for (let arr of this.arrs)
+              {
+                for (let cell of arr)
+                {
+                  cell.mask = false;
+                }
+              }
+              this.arrs = this.arrs.slice();
+            }
+            
+          },
+          computed: {
+            boomCount: function()
+            {
+              return this.arrs.reduce((pre, curr) => 
+              {
+                return pre + curr.filter(cell => cell.type === VALUE_TYPES.BOOM).length;
+              }, 0);
+            },
+            markedBoomCount: function()
+            {
+              return this.arrs.reduce((pre, curr) => 
+              {
+                return pre + curr.filter(cell => cell.flag).length;
+              }, 0);
+            },
+            solvedCount: function()
+            {
+              return this.arrs.reduce((pre, curr) => 
+              {
+                return pre + curr.filter(cell => !cell.mask).length;
+              }, 0);
+            },
+            cellCount: function()
+            {
+              return this.arrs.reduce((pre, curr) => 
+              {
+                return pre + curr.length;
+              }, 0);
+            }
+          }
+        });
+
+        /**
+         * - 地图说明
+         *   - 地图是个方形, 有x*y个格子, 每个格子有3种可能(空, 数字, 雷)
+         *   - 数字的意思表示以数字所在格子为中心的九宫格有n颗雷, 去掉本身另外8个格子, 那么理论上这个数字的范围是1~8
+         * 
+         * - 数据结构
+         *   - 用二维数组表示方形, 二维数组的每个一维数组表示一行格子; 形如 [[cell0, cell1, ...], [cell0, cell1, ...], ...]
+         *   - 每个格子有三种值: 'empty', 'number', 'boom'; 形如: { value: 'empty' }
+         **/
+        
+        function generateMap(height, width, boomSize)
+        {
+          let rows = new Array(height).fill(1).map((item, i) => 
+          {
+            return new Array(width).fill(1).map(() => 
+            {
+              return ({ 
+                type: VALUE_TYPES.EMPTY, 
+                num: 0, 
+                flag: false,
+                mask: true,
+              });
+            });
+          });
+          let boomCount = 0;
+          while (boomCount<boomSize)
+          {
+            const { x, y } = randomBoomPosition(rows);
+            rows[y][x].type = VALUE_TYPES.BOOM;
+            boomCount++;
+          }
+
+          fillNumbers(rows);
+          // console.log("rows >>>", rows);
+
+          return rows;
+        }
+
+        function randomBoomPosition(arrs)
+        {
+          const height = arrs.length, width = arrs[0].length;
+          let x, y = 0;
+          do {
+            x = randomNum(width);
+            y = randomNum(height);
+            // console.log(x, y, arrs[y][x].type);
+          } while (arrs[y][x].type !== VALUE_TYPES.EMPTY);
+
+          return { x, y };
+        }
+
+        function randomNum(size)
+        {
+          return parseInt(Math.random()*10000)%size;
+        }
+
+        function fillNumbers(arrs)
+        {
+          for (let y=0, height=arrs.length; y<height; y++)
+          {
+            for (let x=0, width=arrs[y].length; x<width; x++)
+            {
+              const cell = arrs[y][x];
+              if (cell.type === VALUE_TYPES.BOOM)
+              {
+                continue;
+              }
+
+              cell.num = sumBooms(arrs, y, x);
+              if (cell.num)
+              {
+                cell.type = VALUE_TYPES.NUMBER;
+              }
+            }
+          }
+        }
+
+        function sumBooms(arrs, y, x)
+        {
+          return (
+            getCellBoomNum(arrs, y-1, x-1)
+            +
+            getCellBoomNum(arrs, y-1, x)
+            +
+            getCellBoomNum(arrs, y-1, x+1)
+            +
+            getCellBoomNum(arrs, y, x+1)
+            +
+            getCellBoomNum(arrs, y+1, x+1)
+            +
+            getCellBoomNum(arrs, y+1, x)
+            +
+            getCellBoomNum(arrs, y+1, x-1)
+            +
+            getCellBoomNum(arrs, y, x-1)
+          );
+        }
+
+        function getCellBoomNum(arrs, y, x)
+        {
+          return arrs[y]?.[x]?.type === VALUE_TYPES.BOOM ? 1 : 0;
+        }
+
+        function onEmptyCellClick(arrs, y, x)
+        {
+          const targets = [
+            { cell: arrs[y-1]?.[x-1], y: y-1, x: x-1, },
+            { cell: arrs[y-1]?.[x], y: y-1, x: x, },
+            { cell: arrs[y-1]?.[x+1], y: y-1, x: x+1, },
+            { cell: arrs[y]?.[x+1], y: y, x: x+1, },
+            { cell: arrs[y+1]?.[x+1], y: y+1, x: x+1, },
+            { cell: arrs[y+1]?.[x], y: y+1, x: x, },
+            { cell: arrs[y+1]?.[x-1], y: y+1, x: x-1, },
+            { cell: arrs[y]?.[x-1], y: y, x: x-1, },
+          ];
+          for (let { cell, x, y } of targets)
+          {
+            if (cell?.flag || !(cell?.mask))
+              continue;
+            if (cell?.type !== VALUE_TYPES.BOOM)
+              cell.mask = false;
+            if (cell && cell.type === VALUE_TYPES.EMPTY)
+            {
+              onEmptyCellClick(arrs, y, x);
+            }
+
+          }
+        }
+
+      })();
+    </script>
+  </body>
+</html>
