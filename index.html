@@ -6,20 +6,30 @@
         flex-direction: row;
       }
       .cell {
-        width: 25px;
-        height: 25px;
+        width: 30px;
+        height: 30px;
         border: 1px solid lightgray;
         display: flex;
         justify-content: center;
         align-items: center;
         font-size: small;
+        background: aliceblue;
+        font-weight: bold;
+        cursor: default;
       }
       .cell.mask {
-        background: #03a9f4;
+        background: #1e88e5;
       }
-      .cell.flag {
-        color: red;
+      .cell.mask:hover {
+        background-color: skyblue;
       }
+      .cell.failed {
+        background-color: red;
+      }
+      .cell.flag.game-over {
+        background-color: pink;
+      }
+
     </style>
   </head>
   <body>
@@ -27,23 +37,44 @@
       <div id="Container">
         <div class="row" v-for="(arr, y) of arrs">
           <div 
-            v-bind:class="{ cell: true, mask: item.mask, flag: item.flag }" 
+            v-bind:class="{ cell: true, mask: item.mask, flag: item.flag, failed: item.failed, 'game-over': isGameOver }" 
             v-for="(item, x) of arr" 
             @click.left="handleItemClick(item, y, x, $event)"
-            @click.right="handleItemRightClick(item, y, x, $event)">
+            @click.right="handleItemRightClick(item, y, x, $event)"
+            >
             <span v-if="!item.mask">
-              <span v-if="item.type==VALUE_TYPES.BOOM">×</span>
+              <span v-if="item.type==VALUE_TYPES.BOOM">
+                <svg 
+                  t="1628772913980" 
+                  class="icon boom" 
+                  viewBox="0 0 1024 1024" 
+                  version="1.1" 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  p-id="3811" 
+                  width="20" 
+                  height="20"><path d="M394.039216 236.92549C176.188235 236.92549 0.501961 413.615686 0.501961 630.462745 0.501961 848.313725 177.192157 1024 394.039216 1024c217.85098 0 393.537255-176.690196 393.537255-393.537255 1.003922-216.847059-175.686275-393.537255-393.537255-393.537255zM311.717647 409.6c-56.219608 0-145.568627 97.380392-145.568627 177.694118 0 16.062745-13.05098 28.109804-28.109804 28.109804s-28.109804-13.05098-28.109804-28.109804c0-107.419608 110.431373-234.917647 202.792157-234.917647 16.062745 0 28.109804 13.05098 28.109804 28.109804s-13.05098 29.113725-29.113726 29.113725z" p-id="3812" fill="#2c2c2c"></path><path d="M689.192157 426.666667l-97.380392-97.380392a33.330196 33.330196 0 0 1 0-47.184314L632.972549 240.941176c13.05098-13.05098 34.133333-13.05098 47.184314 0l97.380392 97.380393c13.05098 13.05098 13.05098 34.133333 0 47.184313l-41.160784 41.160785a33.330196 33.330196 0 0 1-47.184314 0z" p-id="3813" fill="#2c2c2c"></path><path d="M701.239216 317.239216c-9.035294-9.035294-9.035294-25.098039 0-34.133334l131.513725-131.513725c9.035294-9.035294 25.098039-9.035294 34.133334 0 9.035294 9.035294 9.035294 25.098039 0 34.133333L735.372549 317.239216c-9.035294 9.035294-25.098039 9.035294-34.133333 0zM822.713725 117.458824l-46.180392-50.196079c-7.027451-8.031373-7.027451-20.078431 1.003922-27.105882 8.031373-7.027451 20.078431-7.027451 27.105882 1.003921l46.180392 50.196079c7.027451 8.031373 7.027451 20.078431-1.003921 27.105882-7.027451 7.027451-19.07451 6.023529-27.105883-1.003921zM932.141176 161.631373l48.188236 48.188235c7.027451 7.027451 7.027451 20.078431 0 27.105882-7.027451 7.027451-20.078431 7.027451-27.105883 0l-48.188235-48.188235c-7.027451-7.027451-7.027451-20.078431 0-27.105882 8.031373-7.027451 20.078431-7.027451 27.105882 0zM955.231373 40.156863l-50.196079 46.180392c-8.031373 7.027451-8.031373 19.07451-1.003921 27.105882s19.07451 8.031373 27.105882 1.003922l50.196078-46.180392c8.031373-7.027451 8.031373-19.07451 1.003922-27.105883-8.031373-8.031373-20.078431-8.031373-27.105882-1.003921zM858.854902 19.07451l-1.003922 67.262745c0 11.043137 8.031373 19.07451 19.07451 20.078431 11.043137 0 19.07451-8.031373 20.078432-19.07451l1.003921-67.262745c0-11.043137-8.031373-19.07451-19.07451-20.078431-11.043137 0-19.07451 8.031373-20.078431 19.07451zM1003.419608 115.45098l-67.262745 2.007844c-11.043137 0-19.07451 9.035294-19.07451 20.078431s9.035294 19.07451 20.078431 19.07451l67.262745-2.007843c11.043137 0 19.07451-9.035294 19.07451-20.078432-1.003922-11.043137-10.039216-19.07451-20.078431-19.07451z" p-id="3814" fill="#515151"></path></svg>
+              </span>
               <span v-else-if="item.type==VALUE_TYPES.NUMBER">{{ item.num }}</span>
               <span e-else></span>
             </span>
-            <span v-else-if="item.flag">F</span>
+            <span v-else-if="item.flag">
+              <svg 
+                t="1628772711417" 
+                class="icon" 
+                viewBox="0 0 1024 1024" 
+                version="1.1" 
+                xmlns="http://www.w3.org/2000/svg" 
+                p-id="3427" 
+                width="20" 
+                height="20"><path d="M750.311065 323.377729l-384.000188-191.999905a31.979539 31.979539 0 0 0-14.309419-3.378388h-0.001505v-48.000353c0-8.836189-7.1628-16.000118-16.000118-16.000118-8.836189 0-16.000118 7.163552-16.000117 16.000118v864.001082c0 8.836565 7.163552 16.000494 16.000117 16.000494 8.836942 0 16.000118-7.163552 16.000118-16.000494v-368.000824h0.001505a31.972389 31.972389 0 0 0 14.309419-3.378387l384.000188-191.999906c10.841472-5.420548 17.688935-16.500968 17.688935-28.621848s-6.847463-23.200547-17.688935-28.621471z" fill="red" p-id="3428"></path></svg>
+            </span>
           </div>
         </div>
         <div>
           剩余: {{ markedBoomCount }}/{{ boomCount }}
         </div>
         <div>
-          <button @click="handleGodSolve">i am GOD!</button>
+          <button @click="handleGodSolve">GOD!</button>
         </div>
       </div>
     </div>
@@ -51,6 +82,7 @@
     <script>
       (function()
       {
+        const WIDTH = 30, HEIGHT = 20, BOOMNUM = 100;
         const VALUE_TYPES = {
           EMPTY: 0,
           BOOM: -1,
@@ -61,7 +93,9 @@
           data() {
             return {
               VALUE_TYPES,
-              arrs: generateMap(10, 10, 20),
+              arrs: generateMap(HEIGHT, WIDTH, BOOMNUM),
+              isGameOver: false,
+              isComplete: false,
             };
           },
           created: function()
@@ -71,7 +105,7 @@
           methods: {
             handleItemClick(item, y, x, e) {
               console.log("handleItemClick", item, y, x, e);
-              if (this.arrs[y][x].flag)
+              if (this.arrs[y][x].flag || this.isComplete || this.isGameOver)
               {
                 return;
               }
@@ -89,10 +123,13 @@
 
                   return item;
                 }));
-                alert("game over");
+                this.arrs[y][x].failed = true;
+                this.isGameOver = true;
+                setTimeout(() => alert("game over"), 100);
               }
               else if (this.solvedCount >= (this.cellCount - this.boomCount))
               {
+                this.isComplete = true;
                 alert("you win");
               }
               // console.log(">>>", this.arrs[y][x]);
@@ -110,15 +147,31 @@
             },
             handleGodSolve()
             {
-              for (let arr of this.arrs)
+              const run = (n=0) =>
               {
-                for (let cell of arr)
+                setTimeout(() => 
                 {
-                  cell.mask = false;
-                }
+                  const y = Math.floor(n/WIDTH), x = n%WIDTH;
+                  if (this.arrs[y]?.[x])
+                  {
+                    this.arrs[y][x].mask = false;
+                    this.arrs = this.arrs.slice();
+                    run(n+1);
+                  }
+                }, 10);
               }
-              this.arrs = this.arrs.slice();
-            }
+
+              run();
+
+              // for (let arr of this.arrs)
+              // {
+              //   for (let cell of arr)
+              //   {
+              //     cell.mask = false;
+              //   }
+              // }
+              // this.arrs = this.arrs.slice();
+            },
             
           },
           computed: {
